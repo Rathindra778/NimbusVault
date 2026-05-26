@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — NimbusVault{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">My Files</h2>
+      <p class="page-sub">Hello, <strong>{{ user['username'] }}</strong> — manage your cloud storage below.</p>
+    </div>
+    <button class="btn-upload-trigger" data-bs-toggle="modal" data-bs-target="#uploadModal">
+      <i class="bi bi-cloud-upload-fill"></i>
+      <span>Upload Files</span>
+    </button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-blue"><i class="bi bi-files"></i></div>
+      <div class="stat-body">
+        <p class="stat-value">{{ total_files }}</p>
+        <p class="stat-label">Total Files</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-teal"><i class="bi bi-hdd-stack"></i></div>
+      <div class="stat-body">
+        <p class="stat-value">{{ total_size_human }}</p>
+        <p class="stat-label">Storage Used</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-violet"><i class="bi bi-shield-check"></i></div>
+      <div class="stat-body">
+        <p class="stat-value">Secure</p>
+        <p class="stat-label">Encrypted Storage</p>
+      </div>
+    </div>
+  </div>
+
+  <form method="GET" action="{{ url_for('dashboard') }}" class="search-bar">
+    <div class="search-wrap">
+      <i class="bi bi-search search-icon"></i>
+      <input type="text" name="q" class="search-input"
+             placeholder="Search files…" value="{{ query }}">
+      {% if query %}
+      <a href="{{ url_for('dashboard') }}" class="search-clear"><i class="bi bi-x-lg"></i></a>
+      {% endif %}
+    </div>
+    <button type="submit" class="btn-search">Search</button>
+  </form>
+
+  {% if files %}
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="files-table">
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Type</th>
+            <th>Size</th>
+            <th>Uploaded</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for file in files %}
+          {% set ext = file_ext(file['filename']) %}
+          <tr class="file-row">
+            <td>
+              <div class="file-name-cell">
+                <div class="file-thumb file-ext-{{ ext }}">
+                  {% if ext in ['jpg','jpeg','png','gif','webp'] %}
+                    <i class="bi bi-image"></i>
+                  {% elif ext == 'pdf' %}
+                    <i class="bi bi-file-earmark-pdf"></i>
+                  {% elif ext == 'docx' %}
+                    <i class="bi bi-file-earmark-word"></i>
+                  {% elif ext == 'txt' %}
+                    <i class="bi bi-file-earmark-text"></i>
+                  {% else %}
+                    <i class="bi bi-file-earmark"></i>
+                  {% endif %}
+                </div>
+                <span class="file-name-text">{{ file['filename'] }}</span>
+              </div>
+            </td>
+            <td><span class="badge-ext">{{ ext|upper }}</span></td>
+            <td><span class="file-size">{{ human_size(file['file_size']) }}</span></td>
+            <td><span class="file-date">{{ file['upload_date'][:10] }}</span></td>
+            <td>
+              <div class="action-btns">
+                <a href="{{ url_for('download', file_id=file['id']) }}"
+                   class="btn-action btn-dl" title="Download">
+                  <i class="bi bi-download"></i>
+                </a>
+                <button class="btn-action btn-del" title="Delete"
+                        onclick="confirmDelete({{ file['id'] }}, '{{ file['filename']|e }}')">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">
+      {% if query %}<i class="bi bi-search"></i>
+      {% else %}<i class="bi bi-cloud-upload"></i>{% endif %}
+    </div>
+    {% if query %}
+      <h3>No results for "{{ query }}"</h3>
+      <p>Try a different term or <a href="{{ url_for('dashboard') }}">clear the filter</a>.</p>
+    {% else %}
+      <h3>No files yet</h3>
+      <p>Click <strong>Upload Files</strong> to add your first file.</p>
+      <button class="btn-upload-trigger mt-2" data-bs-toggle="modal" data-bs-target="#uploadModal">
+        <i class="bi bi-cloud-upload-fill"></i> Upload your first file
+      </button>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content upload-modal">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-cloud-arrow-up"></i> Upload Files</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data" id="uploadForm">
+          <div class="drop-zone" id="dropZone">
+            <input type="file" name="file" id="fileInput" multiple
+                   accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.docx,.txt,.mp4,.mkv,.avi,.mov">
+            <div class="drop-zone-icon"><i class="bi bi-cloud-upload"></i></div>
+            <p class="drop-zone-text">Drag & drop files here</p>
+            <p class="drop-zone-sub">or <label for="fileInput" class="drop-zone-browse">browse files</label></p>
+            <p class="drop-zone-types">PDF · Images · DOCX · TXT ·Video. Max 3 GB each</p>
+          </div>
+          <div id="filePreviewList" class="file-preview-list"></div>
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn-modal-upload" id="submitBtn" disabled>
+              <i class="bi bi-upload"></i> Upload
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content delete-modal">
+      <div class="modal-body text-center py-4">
+        <div class="delete-icon"><i class="bi bi-trash3-fill"></i></div>
+        <h5 class="mt-3">Delete File?</h5>
+        <p class="text-muted small" id="deleteFileName"></p>
+        <p class="text-muted small">This action cannot be undone.</p>
+        <div class="d-flex gap-2 justify-content-center mt-3">
+          <button class="btn-modal-cancel" data-bs-dismiss="modal">Cancel</button>
+          <form id="deleteForm" method="POST">
+            <button type="submit" class="btn-modal-delete">
+              <i class="bi bi-trash3"></i> Delete
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function confirmDelete(fileId, filename) {
+  document.getElementById('deleteFileName').textContent = filename;
+  document.getElementById('deleteForm').action = '/delete/' + fileId;
+  new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

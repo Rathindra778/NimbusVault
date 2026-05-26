@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel — NimbusVault{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title"><i class="bi bi-shield-check me-2"></i>Admin Panel</h2>
+      <p class="page-sub">Manage all users and files.</p>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-blue"><i class="bi bi-people"></i></div>
+      <div class="stat-body">
+        <p class="stat-value">{{ users|length }}</p>
+        <p class="stat-label">Total Users</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-teal"><i class="bi bi-files"></i></div>
+      <div class="stat-body">
+        <p class="stat-value">{{ files|length }}</p>
+        <p class="stat-label">Total Files</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-violet"><i class="bi bi-hdd-stack"></i></div>
+      <div class="stat-body">
+        <p class="stat-value">{{ total_size_human }}</p>
+        <p class="stat-label">Storage Used</p>
+      </div>
+    </div>
+  </div>
+
+  <h5 class="section-label">All Users</h5>
+  <div class="table-card mb-4">
+    <div class="table-responsive">
+      <table class="files-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Username</th><th>Email</th>
+            <th>Admin</th><th>Joined</th><th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td><code>{{ u['id'] }}</code></td>
+            <td>
+              {{ u['username'] }}
+              {% if u['is_admin'] %}<span class="badge-admin ms-1"><i class="bi bi-shield-fill-check"></i> Admin</span>{% endif %}
+            </td>
+            <td>{{ u['email'] }}</td>
+            <td>{{ 'Yes' if u['is_admin'] else 'No' }}</td>
+            <td>{{ u['created_at'][:10] }}</td>
+            <td class="text-end">
+              {% if not u['is_admin'] %}
+              <form method="POST" action="{{ url_for('admin_delete_user', user_id=u['id']) }}"
+                    onsubmit="return confirm('Delete user {{ u['username'] }} and ALL their files?')">
+                <button type="submit" class="btn-action btn-del"><i class="bi bi-trash3"></i></button>
+              </form>
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h5 class="section-label">All Files</h5>
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="files-table">
+        <thead>
+          <tr>
+            <th>File</th><th>Owner</th><th>Size</th><th>Uploaded</th><th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in files %}
+          <tr>
+            <td>
+              <div class="file-name-cell">
+                <div class="file-thumb file-ext-{{ file_ext(f['filename']) }}">
+                  <i class="bi bi-file-earmark"></i>
+                </div>
+                <span class="file-name-text">{{ f['filename'] }}</span>
+              </div>
+            </td>
+            <td>{{ f['owner'] }}</td>
+            <td>{{ human_size(f['file_size']) }}</td>
+            <td>{{ f['upload_date'][:10] }}</td>
+            <td class="text-end">
+              <div class="action-btns">
+                <a href="{{ url_for('download', file_id=f['id']) }}" class="btn-action btn-dl"><i class="bi bi-download"></i></a>
+                <button class="btn-action btn-del"
+                        onclick="confirmDelete({{ f['id'] }}, '{{ f['filename']|e }}')">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content delete-modal">
+      <div class="modal-body text-center py-4">
+        <div class="delete-icon"><i class="bi bi-trash3-fill"></i></div>
+        <h5 class="mt-3">Delete File?</h5>
+        <p class="text-muted small" id="deleteFileName"></p>
+        <div class="d-flex gap-2 justify-content-center mt-3">
+          <button class="btn-modal-cancel" data-bs-dismiss="modal">Cancel</button>
+          <form id="deleteForm" method="POST">
+            <button type="submit" class="btn-modal-delete"><i class="bi bi-trash3"></i> Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function confirmDelete(fileId, filename) {
+  document.getElementById('deleteFileName').textContent = filename;
+  document.getElementById('deleteForm').action = '/delete/' + fileId;
+  new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

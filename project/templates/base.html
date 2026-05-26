@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}NimbusVault{% endblock %}</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     NAVBAR
+═══════════════════════════════════════ -->
+{% if session.get('user_id') %}
+<nav class="navbar navbar-expand-lg" id="mainNav">
+  <div class="container-fluid px-4">
+
+    <!-- Brand -->
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('dashboard') }}">
+      <div class="brand-icon"><i class="bi bi-cloud-fill"></i></div>
+      <span class="brand-name">NimbusVault</span>
+    </a>
+
+    <!-- Mobile toggle -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <i class="bi bi-list fs-4"></i>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+        <li class="nav-item">
+          <a class="nav-link {{ 'active' if request.endpoint == 'dashboard' }}" href="{{ url_for('dashboard') }}">
+            <i class="bi bi-grid-1x2"></i> Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {{ 'active' if request.endpoint == 'profile' }}" href="{{ url_for('profile') }}">
+            <i class="bi bi-person-circle"></i> Profile
+          </a>
+        </li>
+        {% if session.get('is_admin') %}
+        <li class="nav-item">
+          <a class="nav-link {{ 'active' if request.endpoint == 'admin_panel' }}" href="{{ url_for('admin_panel') }}">
+            <i class="bi bi-shield-check"></i> Admin
+          </a>
+        </li>
+        {% endif %}
+        <li class="nav-item ms-lg-2">
+          <!-- Dark mode toggle -->
+          <button class="btn btn-icon" id="themeToggle" title="Toggle dark mode">
+            <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+          </button>
+        </li>
+        <li class="nav-item">
+          <a class="btn btn-logout" href="{{ url_for('logout') }}">
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+<!-- ═══════════════════════════════════════
+     FLASH MESSAGES
+═══════════════════════════════════════ -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="toast align-items-center border-0 toast-{{ category }} show" role="alert" data-bs-autohide="true" data-bs-delay="4000">
+      <div class="d-flex">
+        <div class="toast-body d-flex align-items-center gap-2">
+          {% if category == 'success' %}<i class="bi bi-check-circle-fill"></i>
+          {% elif category == 'danger' %}<i class="bi bi-x-circle-fill"></i>
+          {% elif category == 'warning' %}<i class="bi bi-exclamation-triangle-fill"></i>
+          {% else %}<i class="bi bi-info-circle-fill"></i>{% endif %}
+          {{ message }}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+    {% endfor %}
+  {% endwith %}
+</div>
+
+<!-- ═══════════════════════════════════════
+     MAIN CONTENT
+═══════════════════════════════════════ -->
+<main class="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ═══════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Profile — NimbusVault{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">My Profile</h2>
+      <p class="page-sub">Manage your account settings.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="profile-card">
+        <div class="profile-avatar">{{ user['username'][0]|upper }}</div>
+        <h4 class="profile-name">{{ user['username'] }}</h4>
+        <p class="profile-email">{{ user['email'] }}</p>
+        {% if user['is_admin'] %}
+          <span class="badge-admin"><i class="bi bi-shield-fill-check"></i> Admin</span>
+        {% endif %}
+        <hr class="profile-hr">
+        <div class="profile-stats">
+          <div class="pstat">
+            <span class="pstat-val">{{ total_files }}</span>
+            <span class="pstat-lbl">Files</span>
+          </div>
+          <div class="pstat">
+            <span class="pstat-val">{{ total_size_human }}</span>
+            <span class="pstat-lbl">Used</span>
+          </div>
+        </div>
+        <p class="profile-joined">Joined {{ user['created_at'][:7] }}</p>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="settings-card">
+        <h5 class="settings-title"><i class="bi bi-lock-fill"></i> Change Password</h5>
+        <form method="POST" action="{{ url_for('profile') }}">
+          <div class="field-group">
+            <label class="field-label">Current Password</label>
+            <div class="input-wrap">
+              <i class="bi bi-lock input-icon"></i>
+              <input type="password" name="current_password" class="field-input" placeholder="••••••••" required>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">New Password</label>
+            <div class="input-wrap">
+              <i class="bi bi-lock-fill input-icon"></i>
+              <input type="password" name="new_password" class="field-input" placeholder="Min. 6 characters" required>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Confirm New Password</label>
+            <div class="input-wrap">
+              <i class="bi bi-lock-fill input-icon"></i>
+              <input type="password" name="confirm_password" class="field-input" placeholder="••••••••" required>
+            </div>
+          </div>
+          <button type="submit" class="btn-auth" style="width:auto;padding:.6rem 2rem;">
+            <i class="bi bi-check2-circle"></i> Update Password
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
